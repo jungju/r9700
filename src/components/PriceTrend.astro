@@ -1,0 +1,71 @@
+---
+import { formatDate, type PriceObservation, type Product } from '../lib/data';
+interface Props { prices: PriceObservation[]; products: Product[] }
+const { prices, products } = Astro.props;
+const names = new Map(products.map(product => [product.id, product.name]));
+const colors = ['#a3452c', '#286e86', '#52733c', '#865aa3', '#b07920', '#4261a2'];
+const money = (value: number, currency: string) => {
+  try { return new Intl.NumberFormat('ko-KR', { style: 'currency', currency, maximumFractionDigits: currency === 'KRW' ? 0 : 2 }).format(value); }
+  catch { return `${currency} ${value.toLocaleString('ko-KR')}`; }
+};
+const timeLabel = (value: string) => new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value)) + ' KST';
+const dated = prices.filter(row => Number.isFinite(Date.parse(row.observedAt)));
+const valid = (row: PriceObservation) => row.price !== null && Number.isFinite(row.price) && row.price >= 0;
+const currencies = [...new Set(dated.filter(valid).map(row => row.currency))].sort();
+const charts = currencies.map(currency => {
+  const rows = dated.filter(row => row.currency === currency).sort((a, b) => Date.parse(a.observedAt) - Date.parse(b.observedAt));
+  const priced = rows.filter(valid);
+  const start = Math.min(...rows.map(row => Date.parse(row.observedAt)));
+  const end = Math.max(...rows.map(row => Date.parse(row.observedAt)));
+  const low = Math.min(...priced.map(row => row.price!)), high = Math.max(...priced.map(row => row.price!));
+  const padding = high === low ? Math.max(high * .02, 1) : (high - low) * .15;
+  const min = Math.max(0, low - padding), max = high + padding;
+  const x = (row: PriceObservation) => end === start ? 437 : 104 + (Date.parse(row.observedAt) - start) / (end - start) * 666;
+  const y = (row: PriceObservation) => 226 - (row.price! - min) / (max - min) * 194;
+  const groups = new Map<string, PriceObservation[]>();
+  for (const row of rows) {
+    const key = [row.productId, row.region, row.seller, row.offerId, row.condition].join('|');
+    const group = groups.get(key) || []; group.push(row); groups.set(key, group);
+  }
+  const series = [...groups.values()].map((group, index) => {
+    const segments: string[] = []; let points: string[] = [];
+    for (const row of group) {
+      if (!valid(row)) { if (points.length) segments.push(points.join(' ')); points = []; }
+      else points.push(`${x(row)},${y(row)}`);
+    }
+    if (points.length) segments.push(points.join(' '));
+    const first = group[0];
+    const label = `${names.get(first.productId) || '제품 미상'} · ${first.seller} · ${first.region}`;
+    return { label, color: colors[index % colors.length], segments, dots: group.filter(valid).map(row => ({ x: x(row), y: y(row), title: `${label} · ${money(row.price!, currency)} · ${timeLabel(row.observedAt)}` })) };
+  });
+  return { currency, start, end, count: priced.length, series, ticks: [min, (min + max) / 2, max] };
+});
+---
+<div class="trend-charts">
+  {charts.length ? charts.map(chart => <section class="card trend-card">
+    <div class="trend-heading"><h3>{chart.currency} 가격 추세</h3><span class="meta">{chart.count}개 가격 관측</span></div>
+    <svg class="trend-chart" viewBox="0 0 800 280" role="img" aria-label={`${chart.currency} 전체 기간 가격 추세`}>
+      <title>{chart.currency} 전체 기간 가격 추세</title>
+      <desc>{formatDate(new Date(chart.start).toISOString())}부터 {formatDate(new Date(chart.end).toISOString())}까지 {chart.count}개 가격 관측. 판매처별로 표시하며 배송비는 제외합니다.</desc>
+      {chart.ticks.map((tick, index) => <g><line x1="104" x2="770" y1={226-index*97} y2={226-index*97} stroke="currentColor" opacity=".12"/><text x="94" y={230-index*97} text-anchor="end">{money(tick, chart.currency)}</text></g>)}
+      {chart.series.map(series => <g>{series.segments.map(points => <polyline points={points} fill="none" stroke={series.color} stroke-width="2.5"/>)}{series.dots.map(dot => <circle cx={dot.x} cy={dot.y} r="4" fill={series.color}><title>{dot.title}</title></circle>)}</g>)}
+      <text x="104" y="256">{timeLabel(new Date(chart.start).toISOString())}</text>
+      {chart.start !== chart.end && <text x="770" y="274" text-anchor="end">{timeLabel(new Date(chart.end).toISOString())}</text>}
+    </svg>
+    <svg class="trend-chart trend-mobile" viewBox="0 0 400 300" role="img" aria-label={`${chart.currency} 전체 기간 가격 추세`}>
+      <title>{chart.currency} 전체 기간 가격 추세</title>
+      <desc>{chart.count}개 가격 관측. 전체 기록은 아래 관측 표에서 확인할 수 있습니다.</desc>
+      {chart.ticks.map((tick, index) => <g><line x1="118" x2="382" y1={226-index*97} y2={226-index*97} stroke="currentColor" opacity=".12"/><text x="108" y={230-index*97} text-anchor="end">{money(tick, chart.currency)}</text></g>)}
+      {chart.series.map(series => <g>{series.segments.map(points => <polyline points={points.split(' ').map(point => { const [x, y] = point.split(',').map(Number); return `${118+(x-104)/666*264},${y}`; }).join(' ')} fill="none" stroke={series.color} stroke-width="2"/>)}{series.dots.map(dot => <circle cx={118+(dot.x-104)/666*264} cy={dot.y} r="3.5" fill={series.color}><title>{dot.title}</title></circle>)}</g>)}
+      <text x="118" y="266">{timeLabel(new Date(chart.start).toISOString())}</text>
+      {chart.start !== chart.end && <text x="382" y="288" text-anchor="end">{timeLabel(new Date(chart.end).toISOString())}</text>}
+    </svg>
+    <ul class="trend-legend" aria-label="그래프 범례">{chart.series.map(series => <li><span style={`background:${series.color}`} aria-hidden="true"></span>{series.label}</li>)}</ul>
+  </section>) : <div class="empty"><strong>아직 그래프로 표시할 가격 관측이 없습니다.</strong>가격과 관측 시각이 확인되면 전체 이력을 표시합니다.</div>}
+</div>
+<p class="source-link">전체 수집 기간의 가격을 통화별로 표시합니다. 배송비는 제외하며, 가격이 누락된 관측은 선을 끊어 표시합니다. 점에 마우스를 올리면 가격과 관측 시각을 확인할 수 있습니다.</p>
+<style>
+  .trend-charts{display:grid;gap:18px}.trend-heading{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}.trend-chart{width:100%;height:auto;display:block;margin:12px 0;color:var(--muted)}.trend-chart text{fill:currentColor;font-size:11px}.trend-legend{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-wrap:wrap;gap:8px 22px;font-size:12px;color:var(--muted)}.trend-legend li{display:flex;align-items:baseline;gap:8px;overflow-wrap:anywhere}.trend-legend span{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .trend-mobile{display:none}
+  @media(max-width:600px){.trend-card{padding:14px}.trend-chart{display:none}.trend-mobile{display:block}.trend-mobile text{font-size:13px}.trend-legend{display:grid}}
+</style>

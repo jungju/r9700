@@ -15,7 +15,7 @@ for(const entry of fs.readdirSync(path.join(root,'src/pages'),{withFileTypes:tru
 }
 const detail=path.join(pages,'content/[slug].astro');let text=fs.readFileSync(detail,'utf8');
 text=text.replace('const data=loadSiteData();',"export function getStaticPaths(){return loadSiteData().content.map(item=>({params:{slug:item.slug}}));}\nconst data=loadSiteData();");
-text=text.replace(/<div class="section-head"><h2>이 내용이 도움이 되었나요\?<\/h2><\/div><div class="toolbar">[\s\S]*?<\/div>/,'<p><a class="button" href="https://github.com/jungju/r9700/issues/new" target="_blank" rel="noopener noreferrer">내용 보완 요청 ↗</a></p>');
+text=text.replace(/<div class="section-head"><h2>이 내용이 도움이 되었나요\?<\/h2><\/div><div class="toolbar">[\s\S]*?<\/div>/,'');
 text=text.replace(/<script is:inline>[\s\S]*?<\/script>/,'');fs.writeFileSync(detail,text);
 const search=path.join(pages,'search/index.astro');text=fs.readFileSync(search,'utf8');
 text=text.replace('<button class="button" type="button" id="search-miss">검색 결과 없음을 알려주기</button>','<a class="button" href="https://github.com/jungju/r9700/issues/new" target="_blank" rel="noopener noreferrer">찾는 자료 요청하기 ↗</a>');

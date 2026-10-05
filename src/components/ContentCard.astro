@@ -5,5 +5,8 @@ import { formatEvidenceStatus } from './labels';
 interface Props { item: ContentItem }
 const { item } = Astro.props as Props;
 const kindNames: Record<ContentItem['kind'],string> = { news:'소식', review:'리뷰·사용기', guide:'가이드', issue:'문제 해결', resource:'자료실' };
+const dateLabel = item.evidenceStatus.includes('HN-submission-date') ? 'HN 등록일' : '게시일';
+const hasDate = item.publishedAt && Number.isFinite(Date.parse(item.publishedAt));
 ---
-<article class="card"><div class="eyebrow">{kindNames[item.kind]}</div><h3><a href={`/content/${encodeURIComponent(item.slug)}`}>{item.title}</a></h3><p>{item.summary}</p><div class="meta-row"><span>{formatDate(item.publishedAt)}</span><span>{item.sourceName}</span><span>{formatEvidenceStatus(item.evidenceStatus)}</span></div>{item.tags.length>0&&<div class="tag-row">{item.tags.slice(0,4).map((tag: string)=><span class="tag">{tag}</span>)}</div>}</article>
+<article class="card"><div class="card-heading"><div class="eyebrow">{kindNames[item.kind]}</div><div class="content-date">{hasDate?<time datetime={item.publishedAt!}>{dateLabel} {formatDate(item.publishedAt)}</time>:<span>게시일 미확인</span>}</div></div><h3><a href={`/content/${encodeURIComponent(item.slug)}`}>{item.title}</a></h3><p>{item.summary}</p><div class="meta-row"><span>{item.sourceName}</span><span>{formatEvidenceStatus(item.evidenceStatus)}</span></div>{item.tags.length>0&&<div class="tag-row">{item.tags.slice(0,4).map((tag: string)=><span class="tag">{tag}</span>)}</div>}</article>
+<style>.card-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.content-date{font-size:12px;font-weight:600;color:var(--ink);background:var(--soft);padding:3px 8px;border-radius:3px}</style>
