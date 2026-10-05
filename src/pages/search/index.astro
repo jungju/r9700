@@ -1,0 +1,37 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import PageIntro from '../../components/PageIntro.astro';
+import {loadSiteData,formatDate} from '../../lib/data';
+import {buildSearchEntries} from '../../lib/search';
+const entries=buildSearchEntries(loadSiteData(),formatDate);
+const kinds={news:'소식',review:'리뷰·사용기',guide:'가이드',issue:'문제 해결',resource:'자료실',product:'제품',compatibility:'호환성',price:'가격',showcase:'작품',source:'출처'};
+---
+<SiteLayout title="R9700 자료 검색"><div class="wrap">
+  <PageIntro eyebrow="SEARCH" title="자료 검색" description="소식·가이드·제품·호환성·가격·작품·출처를 함께 찾습니다."/>
+  <div class="toolbar"><label class="field" style="flex:1;min-width:220px">검색어<input id="q" type="search" placeholder="예: Windows ROCm, gfx1201, 컴퓨존" autocomplete="off"/></label><label class="field">자료 유형<select id="kind"><option value="">모든 자료</option>{Object.entries(kinds).map(([key,label])=><option value={key}>{label}</option>)}</select></label><button class="button" id="clear" type="button">초기화</button></div>
+  <p class="source-link">제품 표기 변형과 여러 검색어를 함께 찾습니다. 등록 출처와 실제 확인된 자료의 상태를 구분해 읽어 주세요.</p>
+  <p id="result-count" class="source-link" aria-live="polite"></p>
+  <div id="results" class="grid two" data-items={JSON.stringify(entries)} aria-live="polite"></div>
+  <div class="empty" id="no-results" hidden><strong>검색 결과가 없습니다.</strong>검색어를 바꾸거나 <a href="/requests">자료 제보</a>를 이용해 주세요. <button class="button" type="button" id="search-miss">검색 결과 없음을 알려주기</button><span class="source-link" id="search-feedback" aria-live="polite"></span></div>
+</div><script>
+import {matchesSearch,type SearchEntry} from '../../lib/search';
+const root=document.querySelector<HTMLElement>('#results');
+if(root){
+  const rows=JSON.parse(root.dataset.items||'[]') as SearchEntry[];
+  const q=document.querySelector<HTMLInputElement>('#q')!;
+  const kind=document.querySelector<HTMLSelectElement>('#kind')!;
+  const empty=document.querySelector<HTMLElement>('#no-results')!;
+  const count=document.querySelector<HTMLElement>('#result-count')!;
+  const fromUrl=new URLSearchParams(location.search);q.value=fromUrl.get('q')||'';
+  function draw(){
+    const found=rows.filter(x=>matchesSearch(x,q.value,kind.value));
+    count.textContent=found.length+'개 결과'+(found.length>60?' · 처음 60개를 표시합니다. 검색어 또는 유형으로 범위를 좁혀 주세요.':'');
+    root!.replaceChildren(...found.slice(0,60).map(x=>{const article=document.createElement('article');article.className='card';const meta=document.createElement('div');meta.className='eyebrow';meta.textContent=x.kindLabel;const h=document.createElement('h3'),a=document.createElement('a');a.href=x.url;a.textContent=x.title;h.append(a);const p=document.createElement('p');p.textContent=x.summary;const m=document.createElement('div');m.className='meta-row';m.textContent=x.date+' · '+x.sourceName;article.append(meta,h,p,m);return article;}));
+    empty.hidden=found.length>0;
+  }
+  q.addEventListener('input',draw);kind.addEventListener('change',draw);
+  document.querySelector('#clear')!.addEventListener('click',()=>{q.value='';kind.value='';draw();q.focus();});
+  document.querySelector('#search-miss')!.addEventListener('click',async()=>{const out=document.querySelector('#search-feedback')!;try{const response=await fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q.value.trim(),kind:'search-miss'})});const result=await response.json();out.textContent=result.ok?'의견을 받았습니다.':result.error||'전송할 수 없습니다.';}catch{out.textContent='전송할 수 없습니다.';}});
+  draw();
+}
+</script></SiteLayout>

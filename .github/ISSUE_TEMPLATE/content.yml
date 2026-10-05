@@ -1,0 +1,21 @@
+name: 자료 제보 또는 정정 요청
+description: R9700 관련 자료·작품·내용 정정을 제안합니다.
+title: "[자료] "
+body:
+  - type: input
+    id: url
+    attributes:
+      label: 자료 URL 또는 정정할 페이지
+    validations:
+      required: true
+  - type: textarea
+    id: detail
+    attributes:
+      label: 제안 내용과 근거
+    validations:
+      required: true
+  - type: textarea
+    id: rights
+    attributes:
+      label: 작품 제작자·게시 권한·R9700 실행 근거
+      description: 작품 제보인 경우 작성해 주세요. 비밀 정보는 넣지 마세요.

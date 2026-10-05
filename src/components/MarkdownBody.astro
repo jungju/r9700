@@ -1,0 +1,8 @@
+---
+import InlineText from './InlineText.astro';
+const { body='' }=Astro.props;
+type Block = {type:'list';items:string[]}|{type:'h3'|'h2'|'quote'|'p';text:string};
+const blocks: Block[]=[];let list: string[]=[];
+for(const raw of body.split(/\r?\n/)){const line=raw.trimEnd();if(/^\s*[-*]\s+/.test(line)){list.push(line.replace(/^\s*[-*]\s+/,''));continue}if(list.length){blocks.push({type:'list',items:list});list=[]}if(!line.trim())continue;if(/^###\s+/.test(line))blocks.push({type:'h3',text:line.replace(/^###\s+/, '')});else if(/^##\s+/.test(line))blocks.push({type:'h2',text:line.replace(/^##\s+/, '')});else if(/^>\s?/.test(line))blocks.push({type:'quote',text:line.replace(/^>\s?/, '')});else blocks.push({type:'p',text:line})}if(list.length)blocks.push({type:'list',items:list});
+---
+<div class="content-body">{blocks.map(block=>block.type==='h2'?<h2><InlineText text={block.text}/></h2>:block.type==='h3'?<h3><InlineText text={block.text}/></h3>:block.type==='quote'?<blockquote><InlineText text={block.text}/></blockquote>:block.type==='list'?<ul>{block.items.map(item=><li><InlineText text={item}/></li>)}</ul>:<p><InlineText text={block.text}/></p>)}</div>

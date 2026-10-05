@@ -1,0 +1,5 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro'; import PageIntro from '../../components/PageIntro.astro'; import {loadSiteData} from '../../lib/data';
+const products=loadSiteData().products;
+---
+<SiteLayout title="R9700 제품 비교"><div class="wrap"><PageIntro eyebrow="PRODUCTS" title="제품 비교" description="제조사와 정확한 모델명을 구분해 등록된 사양과 제조사 원문을 확인합니다."/>{products.length?<div class="grid two">{products.map(p=><article class="card" id={p.id}><div class="eyebrow">{p.manufacturer}</div><h2>{p.name}</h2><p class="mono">{p.model}</p><div class="table-wrap" style="margin:15px 0"><table><tbody>{Object.entries(p.specs).map(([k,v])=><tr><th>{k}</th><td>{v}</td></tr>)}</tbody></table></div><a class="source-link" href={p.sourceUrl} target="_blank" rel="noopener noreferrer">제조사 사양 원문 ↗</a></article>)}</div>:<div class="empty"><strong>확인된 제품 자료가 없습니다.</strong>제조사 원문 확인 뒤 모델별로 등록합니다.</div>}</div></SiteLayout>

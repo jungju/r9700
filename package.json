@@ -1,0 +1,32 @@
+{
+  "name": "r9700-hub",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev --host 127.0.0.1",
+    "build": "astro build",
+    "start": "node dist/server/entry.mjs",
+    "check": "astro check",
+    "test": "node --test tests-web/*.test.mjs",
+    "ops:init": "python -m ops.r9700 init",
+    "ops:run": "python -m ops.r9700 run",
+    "ops:status": "python -m ops.r9700 status",
+    "local": "node scripts/local.mjs",
+    "test:integration": "node tests-web/full.integration.mjs",
+    "build:pages": "node scripts/build-pages.mjs"
+  },
+  "dependencies": {
+    "@astrojs/node": "11.1.6",
+    "astro": "7.3.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@playwright/cli": "0.1.22",
+    "@types/node": "26.6.4",
+    "typescript": "6.0.3"
+  }
+}

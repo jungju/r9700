@@ -1,0 +1,5 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro'; import PageIntro from '../../components/PageIntro.astro'; import ContentCard from '../../components/ContentCard.astro'; import {loadSiteData} from '../../lib/data';
+const items=loadSiteData().content.filter(x=>['news','review'].includes(x.kind)).sort((a,b)=>(Date.parse(b.publishedAt||'')||0)-(Date.parse(a.publishedAt||'')||0));
+---
+<SiteLayout title="R9700 소식"><div class="wrap"><PageIntro eyebrow="NEWS & REVIEWS" title="소식" description="공식 발표와 리뷰, 사용 경험을 원문 출처 및 근거 상태와 함께 모읍니다."/>{items.length?<div class="grid two">{items.map(item=><ContentCard item={item}/>)}</div>:<div class="empty"><strong>등록된 소식이 없습니다.</strong>확인된 자료가 등록되면 여기에 표시합니다.</div>}</div></SiteLayout>

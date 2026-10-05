@@ -1,0 +1,88 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import PageIntro from '../../components/PageIntro.astro';
+import { loadSiteData, isStale } from '../../lib/data';
+const data = loadSiteData();
+const products = data.products;
+const productNames = new Map(products.map(product => [product.id, product.name]));
+const makeOfferKey = (item: typeof data.prices[number]) => [item.productId,item.region,item.seller,item.condition,item.currency].join('|');
+const offerMap = new Map<string,{key:string;label:string}>();
+for (const item of data.prices) {
+  const key=makeOfferKey(item);
+  offerMap.set(key,{key,label:`${productNames.get(item.productId)||'제품 미상'} · ${item.seller} · ${item.condition} · ${item.currency} · ${item.region}`});
+}
+const offers=[...offerMap.values()];
+const observations=data.prices.map(item=>({id:item.id,offerId:item.offerId,offerKey:makeOfferKey(item),productId:item.productId,product:productNames.get(item.productId)||'제품 미상',seller:item.seller,region:item.region,currency:item.currency,price:item.price,shipping:item.shipping,condition:item.condition,stock:item.stock,observedAt:item.observedAt,stale:isStale(item),url:item.sourceUrl}));
+---
+<SiteLayout title="R9700 가격과 재고">
+  <div class="wrap">
+    <PageIntro eyebrow="PRICE & AVAILABILITY" title="가격과 재고" description="한국·미국·유럽의 실제 가격 관측입니다. 판매처, 배송비, 상품 상태와 관측 시각을 따로 확인하세요."/>
+    <div class="notice">가격은 판매처별 시점 관측이며 구매 가능성이나 현재 재고를 보장하지 않습니다. 기록이 없는 값은 비워 둡니다. 관심 가격 규칙은 이 브라우저에만 저장되며 페이지를 열 때 확인합니다.</div>
+    <div class="section-head"><h2>가격 이력</h2><span class="meta">PRICE HISTORY</span></div>
+    <div class="grid two">
+      <section class="card">
+        <label class="field">판매 조건<select id="chart-offer"><option value="">판매처와 조건 선택</option>{offers.map(offer=><option value={offer.key}>{offer.label}</option>)}</select></label>
+        <svg id="price-chart" class="price-chart" viewBox="0 0 640 180" role="img" aria-label="선택한 판매 조건의 가격 이력 그래프"></svg>
+        <p id="chart-note" class="source-link" aria-live="polite">판매 조건을 고르면 같은 제품·지역·판매처·조건·통화의 관측만 그립니다.</p>
+      </section>
+      <section class="card">
+        <div class="eyebrow">LOCAL PRICE WATCH</div><h3>관심 가격 규칙</h3>
+        <p>이 브라우저에서 가격 페이지를 열 때, 같은 통화의 최신 재고 있음 관측이 목표 가격 이하인지 확인합니다. 배송비는 별도로 표시하므로 가격 비교에 합산하지 않습니다.</p>
+        <form id="watch-form" class="toolbar">
+          <label class="field">제품<select name="product" required><option value="">제품 선택</option>{products.map(product=><option value={product.id}>{product.name}</option>)}</select></label>
+          <label class="field">지역<select name="region" required><option value="KR">한국</option><option value="US">미국</option><option value="EU">유럽</option></select></label>
+          <label class="field">통화<input name="currency" required maxlength="8" placeholder="KRW, USD, EUR"/></label>
+          <label class="field">목표 가격<input name="target" type="number" min="1" step="any" required/></label>
+          <button class="button primary" type="submit">규칙 저장</button>
+        </form>
+        <div id="watch-state" aria-live="polite"></div>
+      </section>
+    </div>
+    <div class="section-head"><h2>전체 관측</h2><span class="meta">{observations.length} OBSERVATIONS</span></div>
+    <div class="toolbar">
+      <label class="field">지역<select id="filter-region"><option value="">모든 지역</option><option value="KR">한국</option><option value="US">미국</option><option value="EU">유럽</option></select></label>
+      <label class="field">통화<input id="filter-currency" placeholder="KRW, USD…"/></label>
+      <label class="field">판매처<input id="filter-seller" placeholder="판매처 검색"/></label>
+      <label class="field">재고 상태<select id="filter-stock"><option value="">모든 상태</option><option value="in_stock">재고 있음</option><option value="out_of_stock">품절</option><option value="unknown">재고 미확인</option><option value="fetch_error">확인 오류</option><option value="price_missing">가격 미확인</option></select></label>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>제품</th><th>판매처</th><th>지역</th><th>가격</th><th>배송</th><th>상태</th><th>관측 시각</th><th>원문</th></tr></thead><tbody id="price-rows" data-items={JSON.stringify(observations)}></tbody></table></div>
+    <div id="prices-empty" class="empty" hidden><strong>필터에 맞는 관측이 없습니다.</strong>다른 조건을 선택해 주세요.</div>
+    <div class="empty" id="prices-none" hidden><strong>아직 가격 관측이 없습니다.</strong>출처를 통한 관측 자료가 등록되면 시점과 판매 조건을 표시합니다.</div>
+  </div>
+  <script is:inline>
+    (()=>{
+      const body=document.getElementById('price-rows');
+      const rows=JSON.parse(body.dataset.items||'[]');
+      const stockNames={in_stock:'재고 있음',out_of_stock:'품절',unknown:'재고 미확인',fetch_error:'확인 오류',price_missing:'가격 미확인'};
+      const money=(n,c)=>{if(n===null||n===undefined)return '—';try{return new Intl.NumberFormat('ko-KR',{style:'currency',currency:c,maximumFractionDigits:0}).format(n)}catch{return `${c} ${new Intl.NumberFormat('ko-KR').format(n)}`}};
+      const observedAt=value=>{const t=Date.parse(value);return Number.isFinite(t)?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(t)+' KST':'시각 미상'};
+      const offer=document.getElementById('chart-offer');
+      function drawChart(){
+        const svg=document.getElementById('price-chart'),note=document.getElementById('chart-note'),selected=offer.value;
+        svg.replaceChildren();if(!selected){note.textContent='판매 조건을 고르면 같은 제품·지역·판매처·조건·통화의 관측만 그립니다.';return}
+        const series=rows.filter(row=>row.offerKey===selected).sort((a,b)=>(Date.parse(a.observedAt)||0)-(Date.parse(b.observedAt)||0));
+        if(!series.some(row=>row.price!==null)){note.textContent='선택한 판매 조건에 가격이 포함된 관측이 없습니다.';return}
+        const vals=series.filter(row=>row.price!==null).map(row=>row.price),low=Math.min(...vals),high=Math.max(...vals),ns='http://www.w3.org/2000/svg',x0=45,x1=624,y0=145,y1=24;
+        const axis=document.createElementNS(ns,'path');axis.setAttribute('d',`M${x0} ${y1}V${y0}H${x1}`);axis.setAttribute('fill','none');axis.setAttribute('stroke','currentColor');axis.setAttribute('opacity','.28');svg.append(axis);
+        const segments=[];let segment=[];
+        series.forEach((row,index)=>{if(row.price===null){if(segment.length)segments.push(segment);segment=[];return}const x=series.length===1?x0+(x1-x0)/2:x0+(x1-x0)*index/(series.length-1),y=high===low?(y0+y1)/2:y0-(row.price-low)*(y0-y1)/(high-low);segment.push([x,y])});if(segment.length)segments.push(segment);
+        for(const points of segments){if(points.length>1){const path=document.createElementNS(ns,'path');path.setAttribute('d',points.map((point,index)=>`${index?'L':'M'}${point[0]},${point[1]}`).join(' '));path.setAttribute('fill','none');path.setAttribute('stroke','var(--accent)');path.setAttribute('stroke-width','2');svg.append(path)}for(const [x,y] of points){const dot=document.createElementNS(ns,'circle');dot.setAttribute('cx',x);dot.setAttribute('cy',y);dot.setAttribute('r','4');dot.setAttribute('fill','var(--accent)');svg.append(dot)}}
+        const label=document.createElementNS(ns,'text');label.setAttribute('x',x0);label.setAttribute('y',16);label.setAttribute('fill','currentColor');label.setAttribute('font-size','10');label.textContent=`${money(low,series[0].currency)} — ${money(high,series[0].currency)}`;svg.append(label);
+        note.textContent=`${series.length}개 관측 · 판매처 ${series[0].seller} · 배송비는 별도 · 점 사이 누락 가격은 선을 끊어 표시합니다.`;
+      }
+      function drawTable(){
+        const region=document.getElementById('filter-region').value,currency=document.getElementById('filter-currency').value.trim().toLowerCase(),seller=document.getElementById('filter-seller').value.trim().toLowerCase(),stock=document.getElementById('filter-stock').value;
+        const found=rows.filter(row=>(!region||row.region===region)&&(!currency||row.currency.toLowerCase().includes(currency))&&(!seller||row.seller.toLowerCase().includes(seller))&&(!stock||row.stock===stock));
+        body.replaceChildren(...found.map(row=>{const tr=document.createElement('tr'),cells=[row.product,row.seller,row.region,money(row.price,row.currency),row.shipping===null?'배송비 미상':money(row.shipping,row.currency),`${stockNames[row.stock]||row.stock}${row.stale?' · 오래된 관측':''}${row.condition?' · '+row.condition:''}`,observedAt(row.observedAt)];for(const value of cells){const td=document.createElement('td');td.textContent=value;tr.append(td)}const td=document.createElement('td');if(row.url){const a=document.createElement('a');a.href=row.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='판매처 ↗';td.append(a)}else td.textContent='—';tr.append(td);return tr}));
+        document.getElementById('prices-empty').hidden=found.length>0;document.getElementById('prices-none').hidden=rows.length>0;
+      }
+      for(const id of ['filter-region','filter-currency','filter-seller','filter-stock'])document.getElementById(id).addEventListener('input',drawTable);
+      for(const id of ['filter-region','filter-stock'])document.getElementById(id).addEventListener('change',drawTable);
+      offer.addEventListener('change',drawChart);
+      const form=document.getElementById('watch-form');
+      form.addEventListener('submit',event=>{event.preventDefault();const f=new FormData(form),target=Number(f.get('target'));if(!Number.isFinite(target)||target<=0)return;let list=[];try{const saved=JSON.parse(localStorage.getItem('r9700-price-watch')||'[]');if(Array.isArray(saved))list=saved.filter(x=>x&&typeof x.product==='string'&&typeof x.region==='string'&&typeof x.currency==='string'&&Number.isFinite(x.target))}catch{}list.push({product:String(f.get('product')),region:String(f.get('region')),currency:String(f.get('currency')).trim().toUpperCase(),target});localStorage.setItem('r9700-price-watch',JSON.stringify(list.slice(-20)));form.reset();renderWatches()});
+      function renderWatches(){let list=[];try{const saved=JSON.parse(localStorage.getItem('r9700-price-watch')||'[]');if(Array.isArray(saved))list=saved.filter(x=>x&&typeof x.product==='string'&&typeof x.region==='string'&&typeof x.currency==='string'&&Number.isFinite(x.target))}catch{}const box=document.getElementById('watch-state');box.replaceChildren();if(!list.length){box.textContent='저장된 규칙이 없습니다.';return}const latest=new Map();for(const row of [...rows].sort((a,b)=>(Date.parse(b.observedAt)||0)-(Date.parse(a.observedAt)||0)))if(!latest.has(row.offerKey))latest.set(row.offerKey,row);for(const [index,rule] of list.entries()){const matches=[...latest.values()].filter(row=>row.productId===rule.product&&row.region===rule.region&&row.currency.toUpperCase()===rule.currency&&row.price!==null&&row.stock==='in_stock'&&!row.stale&&row.price<=rule.target);const line=document.createElement('p');line.textContent=`${rule.region} · ${rule.currency} ${rule.target} 이하 — ${matches.length?`최근 재고 있음 관측 ${matches.length}건`:'최신 재고 있음 관측 중 조건 충족 없음'}`;const remove=document.createElement('button');remove.type='button';remove.className='button';remove.textContent='삭제';remove.setAttribute('aria-label','관심 가격 규칙 삭제');remove.addEventListener('click',()=>{list.splice(index,1);localStorage.setItem('r9700-price-watch',JSON.stringify(list));renderWatches()});line.append(' ',remove);box.append(line)}}
+      drawTable();drawChart();renderWatches();
+    })();
+  </script>
+</SiteLayout>

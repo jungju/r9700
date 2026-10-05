@@ -1,0 +1,30 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import ContentCard from '../components/ContentCard.astro';
+import { loadSiteData, formatDate, isStale, type PriceObservation } from '../lib/data';
+const data=loadSiteData();
+const recent=data.content.filter(item=>['news','review'].includes(item.kind)).sort((a,b)=>(Date.parse(b.publishedAt||'')||0)-(Date.parse(a.publishedAt||'')||0)).slice(0,4);
+const guide=data.content.filter(x=>x.kind==='guide').slice(0,2);
+const latestByOffer=new Map<string,PriceObservation>();
+for(const item of [...data.prices].sort((a,b)=>(Date.parse(b.observedAt)||0)-(Date.parse(a.observedAt)||0))) if(!latestByOffer.has(item.offerId)) latestByOffer.set(item.offerId,item);
+const known=[...latestByOffer.values()].filter(x=>x.price!==null&&Number.isFinite(x.price)&&['in_stock','unknown'].includes(x.stock)&&!isStale(x)).sort((a,b)=>(Date.parse(b.observedAt)||0)-(Date.parse(a.observedAt)||0));
+const products=new Map(data.products.map(x=>[x.id,x.name]));
+const kr=known.filter(x=>x.region==='KR').sort((a,b)=>Number(a.condition.includes('AggregateOffer'))-Number(b.condition.includes('AggregateOffer')));
+const artworks=data.showcase.filter(x=>x.provenance!=='unverified-reference').slice(0,3);
+const priceItem=kr[0]||known[0];
+const dateTime=(value:string)=>{const time=Date.parse(value);return Number.isFinite(time)?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(time)+' KST':'관측 시각 미상'};
+---
+<SiteLayout title="AMD Radeon AI PRO R9700 소식과 가이드" description="R9700 소식, 가이드, 가격과 호환성 정보를 출처와 함께 정리하는 독립 정보 허브.">
+  <section class="wrap hero"><div><div class="eyebrow">Independent field notes · Radeon AI PRO R9700</div><h1>R9700을 위한<br/><span>실용적인 정보.</span></h1><p>출처와 확인 시점을 함께 보여주는 한국어 정보 허브입니다. 드라이버와 도구 지원부터 실제 가격 관측까지, 확인된 내용만 차곡차곡 모읍니다.</p><a class="button primary" href="/search">자료 검색 <span aria-hidden="true">↗</span></a></div><aside class="hero-aside"><img src="/images/editorial-cover.webp" alt="Radeon AI PRO R9700 정보 허브를 위한 생성형 개념 일러스트" width="1200" height="800" fetchpriority="high" style="width:100%;height:124px;object-fit:cover;display:block;margin:0 0 13px;border:1px solid var(--line)"/><span class="meta" style="display:block;margin-bottom:10px">AI 생성 일러스트 · 제품 사진 아님</span><strong>WHAT'S INSIDE</strong>제조사 자료, 개발 도구 소식, 호환성 확인과 지역별 가격 관측을 한곳에서 찾아보세요.<div class="stat-row"><div class="stat"><b>{data.content.length}</b><small>자료</small></div><div class="stat"><b>{data.products.length}</b><small>제품</small></div><div class="stat"><b>{data.sources.length}</b><small>출처</small></div></div></aside></section>
+  <div class="wrap">
+    <div class="section-head"><h2>최근 소식</h2><a href="/news">소식 모두 보기 →</a></div>
+    {recent.length?<div class="grid two">{recent.map(item=><ContentCard item={item}/>)}</div>:<div class="empty"><strong>아직 등록된 소식이 없습니다.</strong>새 자료가 확인되면 출처와 함께 이곳에 표시합니다.</div>}
+    <div class="section-head"><h2>가격 관측</h2><a href="/prices">지역별 가격 보기 →</a></div>
+    {priceItem?<div class="split"><div class="price-panel"><div class="eyebrow">최근 표시 가격 · {priceItem.region}</div><div class="price-amount">{new Intl.NumberFormat('ko-KR',{style:'currency',currency:priceItem.currency,maximumFractionDigits:priceItem.currency==='KRW'?0:2}).format(priceItem.price!)}</div><div class="meta-row"><span>{priceItem.seller}</span><span>{products.get(priceItem.productId)||'제품 확인 중'}</span><span>{priceItem.condition}</span></div><div class="meta-row"><span>배송 {priceItem.shipping===null?'비용 미상':new Intl.NumberFormat('ko-KR',{style:'currency',currency:priceItem.currency,maximumFractionDigits:0}).format(priceItem.shipping)}</span><span>{priceItem.stock==='in_stock'?'재고 있음':'재고 미확인'}</span><span>{dateTime(priceItem.observedAt)}</span></div></div><div class="notice">판매처에서 확인한 시점 가격입니다. 배송비·세금·현재 구매 조건은 원문에서 확인하세요. 조건별 비교와 전체 이력은 <a href="/prices">가격 페이지</a>에서 확인할 수 있습니다.</div></div>:<div class="empty"><strong>최근 확인된 가격이 없습니다.</strong><a href="/prices">판매처별 기록과 확인 상태 보기 →</a></div>}
+    <div class="section-head"><h2>가이드 시작하기</h2><a href="/guides">가이드 모두 보기 →</a></div>
+    {guide.length?<div class="grid two">{guide.map(item=><ContentCard item={item}/>)}</div>:<div class="empty"><strong>가이드 자료를 정리 중입니다.</strong>자료가 등록되면 원문과 확인 상태를 함께 제공합니다.</div>}
+    <div class="section-head"><h2>R9700 작품 갤러리</h2><a href="/showcase">갤러리 둘러보기 →</a></div>
+    {artworks.length?<div class="showcase-grid">{artworks.map(item=><article class="showcase-item"><div class="showcase-visual">{item.type==='image'?<img src={item.url} alt={item.title} loading="lazy"/>:<a class="button" href="/showcase">영상 보기 · 재생하지 않음</a>}</div><div class="showcase-info"><strong>{item.title}</strong><div class="meta-row">{item.provenance} · {item.model||'모델 미상'}</div></div></article>)}</div>:<div class="empty"><strong>아직 공개된 R9700 작품이 없습니다.</strong>작품을 확인할 수 있게 되면 제작 근거와 권한 정보를 함께 공개합니다.</div>}
+    <p class="source-link" style="margin-top:22px">자료 생성 시점 {formatDate(data.generatedAt)} · <a href="/sources">출처 및 운영 현황</a></p>
+  </div>
+</SiteLayout>

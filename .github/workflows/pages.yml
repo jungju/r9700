@@ -1,0 +1,61 @@
+name: Publish R9700 Hub
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3,9,15,21 * * *'
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: read
+concurrency:
+  group: r9700-pages
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - name: Bootstrap public history on a new runner
+        run: cp data/pages-bootstrap.json data/site-data.json
+      - name: Restore prior collection ledger
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/pages-state.py restore
+      - run: python -m ops.r9700 init
+      - name: Update public sources and prices
+        run: python -m ops.r9700 run
+      - name: Save collection ledger
+        if: always()
+        run: python scripts/pages-state.py save
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: r9700-collection-state
+          path: .local/pages-state/
+          include-hidden-files: true
+          retention-days: 30
+          if-no-files-found: warn
+      - run: npm run check
+      - run: npm run build:pages
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

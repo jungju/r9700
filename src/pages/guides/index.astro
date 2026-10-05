@@ -1,0 +1,5 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro'; import PageIntro from '../../components/PageIntro.astro'; import ContentCard from '../../components/ContentCard.astro'; import {loadSiteData} from '../../lib/data';
+const data=loadSiteData(); const items=data.content.filter(x=>['guide','issue','resource'].includes(x.kind));
+---
+<SiteLayout title="R9700 가이드"><div class="wrap"><PageIntro eyebrow="GUIDES & FIELD NOTES" title="가이드" description="설치와 활용 자료, 호환성 기록, 문제 해결과 참고 자료를 찾아보세요."/><nav class="tag-row" aria-label="가이드 분야"><a class="tag" href="/compatibility">호환성 기록</a><a class="tag" href="/products">제품 비교</a><a class="tag" href="/sources">출처 목록</a></nav><div style="height:22px"></div>{items.length?<div class="grid two">{items.map(item=><ContentCard item={item}/>)}</div>:<div class="empty"><strong>가이드 자료를 준비하고 있습니다.</strong>검증되지 않은 설치 조합이나 측정 결과는 임의로 채우지 않습니다.</div>}</div></SiteLayout>

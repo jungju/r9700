@@ -1,0 +1,24 @@
+services:
+  r9700:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:49700:4321"
+    environment:
+      SITE: https://r9700.jjgo.io
+      HOST: 0.0.0.0
+      PORT: 4321
+      PYTHON_BIN: python3
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      R9700_CODE_RELEASE: ${R9700_CODE_RELEASE:-}
+    volumes:
+      - r9700_state:/app/.local
+    stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  r9700_state:

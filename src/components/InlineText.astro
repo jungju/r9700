@@ -1,0 +1,6 @@
+---
+const { text } = Astro.props;
+const parts=[]; const re=/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`/g; let at=0,match;
+while((match=re.exec(text))){if(match.index>at)parts.push(text.slice(at,match.index));if(match[1])parts.push({kind:'link',text:match[1],url:match[2]});else if(match[3])parts.push({kind:'strong',text:match[3]});else parts.push({kind:'code',text:match[4]});at=re.lastIndex}if(at<text.length)parts.push(text.slice(at));
+---
+{parts.map(part=>typeof part==='string'?part:part.kind==='link'?<a href={part.url} target="_blank" rel="noopener noreferrer">{part.text}</a>:part.kind==='strong'?<strong>{part.text}</strong>:<code>{part.text}</code>)}

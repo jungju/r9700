@@ -1,0 +1,9 @@
+---
+import { formatDate } from '../lib/data';
+import type { ContentItem } from '../lib/data';
+import { formatEvidenceStatus } from './labels';
+interface Props { item: ContentItem }
+const { item } = Astro.props as Props;
+const kindNames: Record<ContentItem['kind'],string> = { news:'소식', review:'리뷰·사용기', guide:'가이드', issue:'문제 해결', resource:'자료실' };
+---
+<article class="card"><div class="eyebrow">{kindNames[item.kind]}</div><h3><a href={`/content/${encodeURIComponent(item.slug)}`}>{item.title}</a></h3><p>{item.summary}</p><div class="meta-row"><span>{formatDate(item.publishedAt)}</span><span>{item.sourceName}</span><span>{formatEvidenceStatus(item.evidenceStatus)}</span></div>{item.tags.length>0&&<div class="tag-row">{item.tags.slice(0,4).map((tag: string)=><span class="tag">{tag}</span>)}</div>}</article>
