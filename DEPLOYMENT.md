@@ -10,7 +10,7 @@ Pages는 서버 POST·관리자·GPU/AI 작업자를 실행하지 않는다. 공
 
 로컬 Pages 빌드: `npm run build:pages`. 배포 설정과 실제 HTTPS 결과는 아래 기존 서버 배포 절차와 구분해 기록한다.
 
-사이트 기준 주소는 https://r9700.jjgo.io 이다. 아직 DNS를 연결하지 않았으므로 이 주소에서 공개 접속된다고 보고하지 않는다. 로컬 개발·서버 빌드·운영 엔진 검증과 실제 서버·DNS·외부 계정 연결은 별도 상태다.
+사이트 기준 주소는 https://r9700.jjgo.io 이다. GitHub Pages 배포·CNAME·HTTPS 접속을 실제 확인했다. 아래 Docker/Caddy 절차는 별도 서버형 운영을 선택할 경우의 대안이며 현재 공개 배포는 GitHub Pages다. 관리자·AI/GPU 작업자·외부 계정 연결은 별도 상태다.
 
 ## Windows 로컬 실행
 

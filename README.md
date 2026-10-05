@@ -1,6 +1,8 @@
 # R9700 Hub
 
-AMD Radeon AI PRO R9700 소식·기술·가격·작품을 모으는 한국어 독립 사이트다. 공개 기준 주소는 **https://r9700.jjgo.io**이며 DNS는 아직 연결하지 않았다. Astra가 운영 엔진을, Luna가 공개 화면과 호스트 컨트롤러를, 부모 세션이 인증·통합·배포 구성·브라우저 검증을 구현했다.
+AMD Radeon AI PRO R9700 소식·기술·가격·작품을 모으는 한국어 독립 사이트다. **https://r9700.jjgo.io**에서 GitHub Pages로 공개 운영한다. DNS CNAME과 HTTPS 연결을 확인했다. Astra가 운영 엔진을, Luna가 공개 화면과 호스트 컨트롤러를, 부모 세션이 인증·통합·배포 구성·브라우저 검증을 구현했다.
+
+공개 저장소는 [jungju/r9700](https://github.com/jungju/r9700)이다. GitHub Actions가 6시간마다 자료를 갱신하고 Pages를 다시 배포한다. 공개 사이트의 제보·정정은 GitHub 이슈로 접수하고, 관리자·GPU·격리 AI 작업자는 별도 운영 환경에서 유지한다.
 
 ```powershell
 npm ci

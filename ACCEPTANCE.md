@@ -1,6 +1,21 @@
 # R9700 Hub 개발 인수
 
-2026년 10월 5일 KST. 사이트 기준 주소는 https://r9700.jjgo.io 이며 DNS·실제 운영 서버는 아직 연결하지 않았다. 구현과 로컬 실행, 실제 수집, 외부 계정/GPU 연결, 공개 배포를 구분한다.
+2026년 10월 5일 KST. 사이트는 https://r9700.jjgo.io 에 GitHub Pages로 공개 배포했다. 구현과 로컬 실행, 실제 수집, 외부 계정/GPU 연결, 공개 배포를 구분한다.
+
+## GitHub Pages 실제 배포 검증
+
+- 저장소: https://github.com/jungju/r9700
+- 배포 실행: https://github.com/jungju/r9700/actions/runs/37285892086 — success.
+- 배포 소스: c72906f9841a4abaea17d1c99ee285cd75bb459f.
+- 공개 스냅샷: release-359a60055623c76c73f88e21, 2026-10-05 17:48 KST.
+- DNS: r9700.jjgo.io CNAME jungju.github.io, 공개 DNS 두 곳과 로컬 해석 확인.
+- GitHub API: custom domain 설정, 인증서 approved, https_enforced=true.
+- HTTP → HTTPS 301 전환 및 HTTPS 200, 기본 Chrome의 실제 TLS 접속 확인.
+- 주요 공개 페이지 11개: 상태 200·H1·HTTPS canonical 모두 정상. Windows ROCm 검색 결과 2개, 브라우저 오류 0.
+- 이미지·RSS·사이트맵·deployment.json 실제 응답 200.
+- 관리자·서버 POST·DB는 Pages 산출물에 포함되지 않는다. 제보·정정은 GitHub 이슈에 연결한다.
+- 첫 CI에서 차단된 가격 수집의 실패 기록에 유통사/수량이 빠지는 문제를 수정했고 운영 테스트 39개를 통과했다. 이후 CI는 이전 장부 복원·수집·장부 저장·정적 빌드·배포를 완료했다. 일부 외부 가격 경로의 차단/실패는 유지하며 배포 성공을 전체 자료 품질 성공으로 바꾸어 보고하지 않는다.
+- 6시간 예약은 KST 00:17/06:17/12:17/18:17이며 실제 예약 시작 시각은 Actions 상황에 따라 지연될 수 있다. 실제 하루 4회 예약 실행 인수는 별도다.
 
 ## 구현
 
@@ -44,7 +59,7 @@ Windows 생존 확인은 Win32 읽기 전용 프로세스 조회를 사용한다
 
 | 항목 | 상태 | 필요 자료 또는 설정 |
 | --- | --- | --- |
-| 공개 DNS·HTTPS 서버 | BLOCKED_CONFIG | r9700.jjgo.io DNS와 운영 호스트·reverse proxy |
+| 공개 DNS·HTTPS 사이트 | PASS | GitHub Pages 배포·인증서·실제 브라우저/HTTP 확인 완료 |
 | EU 실제 가격 | BLOCKED_ACCESS | 접근과 사용 조건을 충족하는 가격 공급자·파서 |
 | R9700 실제 이미지·영상 | WAITING_EVIDENCE | 게시 권한 및 제작 근거가 있는 실제 파일/원문 링크 |
 | GPU 자체 제작 | DEFERRED | 장치 사용권·고정 모델/워크플로·작업자·비용·시간 한도 |
