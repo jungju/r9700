@@ -414,7 +414,8 @@ def collect(store,source_id=None,event_id=None,dry_run=False,client=None,budget_
                 if price_config:
                     failure={**{key:price_config[key] for key in ('offerId','productId','seller','region','currency','condition','sourceUrl')},
                              'id':'price-'+digest([price_config['offerId'],event_id])[:24],'collectionEventId':event_id,
-                             'price':None,'shipping':None,'stock':'fetch_error','observedAt':at}
+                             'price':None,'shipping':None,'stock':'fetch_error','observedAt':at,
+                             'distributor':price_config.get('distributor'),'quantity':price_config.get('quantity')}
                     store.observation(failure)
             result['failed']+=1; result['sources'].append({'id':row['id'],'state':state,'error':redact(str(error)),'retryAt':due})
         finally: store.release('source:'+row['id'],owner)

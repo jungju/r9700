@@ -127,6 +127,29 @@ class OpsCase(unittest.TestCase):
         validate_price(self.price(price=None,stock='price_missing'))
         with self.assertRaises(ValueError): validate_price(self.price(price=5,stock='fetch_error'))
 
+    def test_A06_failed_price_fetch_keeps_distributor_and_quantity_identity(self):
+        source_id='src-062'
+        source_url=next(s['url'] for s in read_json(self.root/'sources.json')['sources'] if s['id']==source_id)
+        original=self.price(event='before-block',distributor='Fixture distributor',quantity=1,sourceUrl=source_url)
+        config={key:original[key] for key in ('offerId','productId','seller','region','currency','condition','sourceUrl','distributor','quantity')}
+        config.update({'sourceId':source_id,'adapter':'compuzone','sku':'fixture','policyConfirmed':True})
+        with self.store.db:
+            self.store.observation(original)
+            self.store.set_setting('priceAdapters',[config])
+            self.store.db.execute('UPDATE sources SET enabled=1 WHERE id=?',(source_id,))
+        class BlockedClient:
+            def get(self,url,*args,**kwargs):
+                if url.endswith('/robots.txt'):return Response(200,url,{},b'User-agent: *\nAllow: /\n')
+                raise FetchError('fixture denied',403)
+        result=collect(self.store,source_id,event_id='blocked-price',client=BlockedClient())
+        self.assertEqual(result['failed'],1)
+        observations=snapshot(self.store)['prices']
+        self.assertEqual(len(observations),2)
+        failure=next(p for p in observations if p['stock']=='fetch_error')
+        self.assertIsNone(failure['price'])
+        self.assertEqual(failure['distributor'],'Fixture distributor')
+        self.assertEqual(failure['quantity'],1)
+
     def test_A06_structured_product_single_offer_only(self):
         config={k:self.price()[k] for k in ('offerId','productId','seller','region','currency','condition','sourceUrl')}
         data={'@type':'Product','name':'Radeon AI PRO R9700','offers':{'@type':'Offer','price':'1250.50','priceCurrency':'USD','availability':'https://schema.org/OutOfStock'}}
