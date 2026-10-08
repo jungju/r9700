@@ -21,7 +21,7 @@ const observations=data.prices.map(item=>({id:item.id,offerId:item.offerId,produ
       <label class="field">판매처<input id="filter-seller" placeholder="판매처 검색"/></label>
       <label class="field">재고 상태<select id="filter-stock"><option value="">모든 상태</option><option value="in_stock">재고 있음</option><option value="out_of_stock">품절</option><option value="unknown">재고 미확인</option><option value="fetch_error">확인 오류</option><option value="price_missing">가격 미확인</option></select></label>
     </div>
-    <div class="table-wrap"><table><thead><tr><th>제품</th><th>판매처</th><th>지역</th><th>가격</th><th>배송</th><th>상태</th><th>관측 시각</th><th>원문</th></tr></thead><tbody id="price-rows" data-items={JSON.stringify(observations)}></tbody></table></div>
+    <div class="table-wrap"><table><thead><tr><th>제품</th><th>판매처</th><th>지역</th><th>가격</th><th>관측 시각</th><th>원문</th></tr></thead><tbody id="price-rows" data-items={JSON.stringify(observations)}></tbody></table></div>
     <div id="prices-empty" class="empty" hidden><strong>필터에 맞는 관측이 없습니다.</strong>다른 필터를 선택해 주세요.</div>
     <div class="empty" id="prices-none" hidden><strong>아직 가격 관측이 없습니다.</strong>출처를 통한 관측 자료가 등록되면 가격과 관측 시각을 표시합니다.</div>
   </div>
@@ -29,13 +29,12 @@ const observations=data.prices.map(item=>({id:item.id,offerId:item.offerId,produ
     (()=>{
       const body=document.getElementById('price-rows');
       const rows=JSON.parse(body.dataset.items||'[]');
-      const stockNames={in_stock:'재고 있음',out_of_stock:'품절',unknown:'재고 미확인',fetch_error:'확인 오류',price_missing:'가격 미확인'};
       const money=(n,c)=>{if(n===null||n===undefined)return '—';try{return new Intl.NumberFormat('ko-KR',{style:'currency',currency:c,maximumFractionDigits:c==='KRW'?0:2}).format(n)}catch{return `${c} ${new Intl.NumberFormat('ko-KR').format(n)}`}};
       const observedAt=value=>{const t=Date.parse(value);return Number.isFinite(t)?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(t)+' KST':'시각 미상'};
       function drawTable(){
         const region=document.getElementById('filter-region').value,currency=document.getElementById('filter-currency').value.trim().toLowerCase(),seller=document.getElementById('filter-seller').value.trim().toLowerCase(),stock=document.getElementById('filter-stock').value;
         const found=rows.filter(row=>(!region||row.region===region)&&(!currency||row.currency.toLowerCase().includes(currency))&&(!seller||row.seller.toLowerCase().includes(seller))&&(!stock||row.stock===stock));
-        body.replaceChildren(...found.map(row=>{const tr=document.createElement('tr'),cells=[row.product,row.seller,row.region,money(row.price,row.currency),row.shipping===null?'배송비 미상':money(row.shipping,row.currency),`${stockNames[row.stock]||row.stock}${row.stale?' · 오래된 관측':''}`,observedAt(row.observedAt)];for(const value of cells){const td=document.createElement('td');td.textContent=value;tr.append(td)}const td=document.createElement('td');if(row.url){const a=document.createElement('a');a.href=row.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='판매처 ↗';td.append(a)}else td.textContent='—';tr.append(td);return tr}));
+        body.replaceChildren(...found.map(row=>{const tr=document.createElement('tr'),cells=[row.product,row.seller,row.region,money(row.price,row.currency),observedAt(row.observedAt)];for(const value of cells){const td=document.createElement('td');td.textContent=value;tr.append(td)}const td=document.createElement('td');if(row.url){const a=document.createElement('a');a.href=row.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='판매처 ↗';td.append(a)}else td.textContent='—';tr.append(td);return tr}));
         document.getElementById('prices-empty').hidden=found.length>0;document.getElementById('prices-none').hidden=rows.length>0;
       }
       for(const id of ['filter-region','filter-currency','filter-seller','filter-stock'])document.getElementById(id).addEventListener('input',drawTable);
