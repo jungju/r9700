@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { curatedShowcase } from './showcase.ts';
 
 export interface ContentItem { id: string; slug: string; title: string; summary: string; kind: 'news'|'review'|'guide'|'issue'|'resource'; tags: string[]; sourceUrl: string; sourceName: string; publishedAt: string|null; updatedAt: string|null; evidenceStatus: string; body: string; relatedIds: string[]; environment?: string[]; }
 export interface Product { id: string; name: string; manufacturer: string; model: string; distributor?: string; sourceUrl: string; specs: Record<string,string>; }
@@ -18,6 +19,9 @@ export function loadSiteData(): SiteData {
   const raw = JSON.parse(fs.readFileSync(selected, 'utf8').replace(/^\uFEFF/, ''));
   if (raw.schemaVersion !== 1 || typeof raw.releaseId !== 'string' || !Array.isArray(raw.content)) throw new Error('Invalid public data snapshot');
   for (const key of ['products','prices','compatibility','showcase','sources']) if (!Array.isArray(raw[key])) throw new Error('Invalid public data list');
+  const curatedIds = new Set(curatedShowcase.map(item => item.id));
+  raw.showcase = [...curatedShowcase, ...raw.showcase.filter((item: ShowcaseItem) => !curatedIds.has(item.id))];
+  if (raw.showcase.length) raw.operations.notices = raw.operations.notices.filter((notice: string) => notice !== '실제 R9700 이미지·영상 제공은 자료 대기 상태입니다.');
   return raw as SiteData;
 }
 export function getContentBySlug(slug: string) { return loadSiteData().content.find(item => item.slug === slug); }

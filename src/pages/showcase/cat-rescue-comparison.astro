@@ -1,0 +1,133 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+---
+<SiteLayout title="고양이 GPU 구조 영상 · 모델 3종 비교" description="R9700 두 장으로 만든 Wan 2.2, MiniMax H3, LTX-2.5의 60초 영상과 제작 시간 비교.">
+<div class="wrap report"><a href="/showcase/">← 작품 갤러리</a>
+<h1>영상 생성 모델 3종 비교</h1>
+<p>R9700 2장 · 고양이 항해 → 난파 → 검정 GPU 헬리콥터 구조 · 60초 · 512×352</p>
+<h2>시간</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="모델 비교 표"><table>
+<thead>
+<tr>
+<th>항목</th>
+<th>Wan 2.2 I2V 14B</th>
+<th>MiniMax H3 FL2VA</th>
+<th>LTX-2.5 Distilled 22B</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>60초 전체 제작</strong></td>
+<td><strong>약 30~45분 · 예상</strong></td>
+<td><strong>22분 43초 · 실측</strong></td>
+<td><strong>90분 57초 · 실측</strong></td>
+</tr>
+<tr>
+<td>시간에 포함된 작업</td>
+<td>생성·기준 이미지·소리·편집·검수</td>
+<td>실행 시작부터 생성·연결·검수</td>
+<td>생성·연결·검수와 디코더 시험·복구</td>
+</tr>
+<tr>
+<td>최종 프레임률</td>
+<td>12fps</td>
+<td>24fps</td>
+<td>24fps</td>
+</tr>
+<tr>
+<td>소리</td>
+<td>효과음·음악 별도 합성</td>
+<td>모델이 영상과 함께 생성</td>
+<td>모델이 영상과 함께 생성</td>
+</tr>
+</tbody>
+</table></div>
+<p>Wan은 전체 제작 시간을 따로 측정하지 않아, 후반 30초 생성 실측 10분 23초를 바탕으로 전체 생성 약 21분과 준비·편집 시간을 추산했습니다. 모델 설치와 큰 재작업은 제외했습니다. H3·LTX는 준비된 기준 이미지로 60초를 모두 새로 생성한 기록입니다.</p>
+<p><strong>이번 구성에서는 소리까지 포함한 제작 속도가 H3에서 가장 빨랐습니다.</strong> 첫 장면 이후 5초 장면 처리 평균은 H3 85.1초, LTX 321.8초로 LTX가 약 3.78배 오래 걸렸습니다. 프레임률·설정·측정 범위가 달라 세 모델의 엄격한 성능 순위로 볼 수는 없습니다.</p>
+<h2>어떻게 만들었나</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="모델 비교 표"><table>
+<thead>
+<tr>
+<th>항목</th>
+<th>Wan 2.2</th>
+<th>MiniMax H3</th>
+<th>LTX-2.5</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>모델 정밀도</td>
+<td>FP8 scaled</td>
+<td>INT8 ConvRot</td>
+<td>INT8 ConvRot</td>
+</tr>
+<tr>
+<td>텍스트 인코더</td>
+<td>UMT5-XXL</td>
+<td>Qwen3-VL 32B</td>
+<td>Gemma 4 12B</td>
+</tr>
+<tr>
+<td>샘플링</td>
+<td>총 20스텝 · Euler/simple</td>
+<td>20스텝 · res_multistep/beta</td>
+<td>8스텝 · Euler ancestral, eta=0</td>
+</tr>
+<tr>
+<td>두 GPU 사용</td>
+<td>각 GPU가 서로 다른 장면 생성·디코딩</td>
+<td>GPU 0 생성 / GPU 1 인코더·디코딩</td>
+<td>GPU 0 생성 / GPU 1 인코더·디코딩</td>
+</tr>
+<tr>
+<td>장면 구성</td>
+<td>5초씩 연결, 마지막 30초 외형 고정 재생성</td>
+<td>5초 × 12장면 새로 생성</td>
+<td>5초 × 12장면 새로 생성</td>
+</tr>
+<tr>
+<td>외형 유지</td>
+<td>ImageGen 기준 이미지로 시작·끝 프레임 지정</td>
+<td>Wan 최종본에서 추출한 13개 기준 이미지</td>
+<td>H3와 같은 13개 이미지·프롬프트·seed</td>
+</tr>
+<tr>
+<td>소리·마무리</td>
+<td>파도·천둥·로터·음악 합성 후 FFmpeg 연결</td>
+<td>생성 음성 32kHz, 장면 사이 교차 페이드·음량 정리</td>
+<td>생성 음성 48kHz, 교차 페이드·음량 정리</td>
+</tr>
+</tbody>
+</table></div>
+<p>Wan 최종본은 앞부분 30초를 재사용했습니다. LTX 최종 출력은 Conv BF16 VAE로 디코딩했으며, 설정 변경 중 지연과 복구가 있어 이번 시간이 최적 성능을 뜻하지는 않습니다.</p>
+<h2>결과</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="모델 비교 표"><table>
+<thead>
+<tr>
+<th>모델</th>
+<th>기존 검수 기록에서 확인한 점</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wan 2.2</td>
+<td>검정 헬리콥터의 큰 외형은 유지. 탑승할 때 몸체와 로터의 세부 변형이 남음.</td>
+</tr>
+<tr>
+<td>MiniMax H3</td>
+<td>항해·난파·구조 흐름 유지. 기체 아래에서 바구니가 내려오는 동작을 확인.</td>
+</tr>
+<tr>
+<td>LTX-2.5</td>
+<td>같은 이야기와 기체 유지. 바구니가 꼬리 근처에서 나타나는 부자연스러운 구간이 있음.</td>
+</tr>
+</tbody>
+</table></div>
+<p>대표 프레임 검수에서는 이전의 강한 녹색·분홍색 색번짐이 관찰되지 않았습니다. 세부 형태 변형은 남아 있으며, 정량 화질 평가와 별도 청취 평가는 하지 않았습니다.</p>
+<h2>영상</h2>
+<p>각 영상은 소리가 포함되어 있습니다.</p>
+<div class="video-grid"><article id="wan"><h3>Wan 2.2 I2V 14B</h3><p>12fps · 별도 합성 효과음·음악</p><video controls playsinline preload="none" poster="/showcase/cat-rescue-3models/wan.jpg" src="/showcase/cat-rescue-3models/wan.mp4" aria-label="Wan 2.2 I2V 14B 고양이 구조 영상"></video><p><a href="/showcase/cat-rescue-3models/wan.mp4">원본 영상 열기</a></p></article><article id="h3"><h3>MiniMax H3 FL2VA</h3><p>24fps · 모델 공동 생성 · 32kHz 스테레오</p><video controls playsinline preload="none" poster="/showcase/cat-rescue-3models/h3.jpg" src="/showcase/cat-rescue-3models/h3.mp4" aria-label="MiniMax H3 FL2VA 고양이 구조 영상"></video><p><a href="/showcase/cat-rescue-3models/h3.mp4">원본 영상 열기</a></p></article><article id="ltx25"><h3>LTX-2.5 Distilled 22B</h3><p>24fps · 모델 공동 생성 · 48kHz 스테레오</p><video controls playsinline preload="none" poster="/showcase/cat-rescue-3models/ltx25.jpg" src="/showcase/cat-rescue-3models/ltx25.mp4" aria-label="LTX-2.5 Distilled 22B 고양이 구조 영상"></video><p><a href="/showcase/cat-rescue-3models/ltx25.mp4">원본 영상 열기</a></p></article></div><p class="evidence"><a href="/showcase/cat-rescue-3models/manifest.json">영상 정보·파일 검증 기록</a> · 2026.10.24 · 제작자 로컬 실행 기록 기반</p></div>
+</SiteLayout>
+<style>
+.report{padding-top:36px}.report h1{font-size:clamp(26px,4vw,40px);line-height:1.25}.report h2{margin-top:36px}.report p{max-width:1000px}.table-scroll{overflow-x:auto;margin:16px 0}table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:14px;border:1px solid var(--line);vertical-align:top;text-align:left;min-width:150px}th{background:var(--soft)}.video-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.video-grid article{border:1px solid var(--line);padding:16px;background:var(--surface)}.video-grid h3{margin:0;font-size:18px}.video-grid p,.evidence{font-size:13px;color:var(--muted)}video{width:100%;aspect-ratio:512/352;background:#111}.evidence{margin-top:24px}@media(max-width:760px){.video-grid{grid-template-columns:1fr}}
+</style>

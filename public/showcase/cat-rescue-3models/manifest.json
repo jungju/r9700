@@ -1,0 +1,43 @@
+{
+  "publishedAt": "2026-10-24",
+  "rights": "제작자 요청으로 R9700 Hub 게시",
+  "timingNote": "Wan 전체 시간은 후반 30초 실측 기반 추정. H3·LTX는 준비된 기준 이미지로 전체 60초 제작 실측. LTX는 설정 시험·복구 포함.",
+  "videos": [
+    {
+      "model": "Wan 2.2 I2V 14B",
+      "url": "/showcase/cat-rescue-3models/wan.mp4",
+      "sha256": "984dace07a8017dc03480cfcc2ce117ccdec91d496da9699ec12a707ecc243ed",
+      "bytes": 14180984,
+      "durationSeconds": 60,
+      "width": 512,
+      "height": 352,
+      "fps": 12,
+      "audio": "별도 합성 효과음·음악",
+      "totalProductionTime": "약 30~45분 · 예상"
+    },
+    {
+      "model": "MiniMax H3 FL2VA",
+      "url": "/showcase/cat-rescue-3models/h3.mp4",
+      "sha256": "155de713501d713a47c0c131d6c24eb830921c7dac9101aa52710673dc4740a1",
+      "bytes": 11627639,
+      "durationSeconds": 60,
+      "width": 512,
+      "height": 352,
+      "fps": 24,
+      "audio": "모델 공동 생성 · 32kHz 스테레오",
+      "totalProductionTime": "22분 43초 · 실측"
+    },
+    {
+      "model": "LTX-2.5 Distilled 22B",
+      "url": "/showcase/cat-rescue-3models/ltx25.mp4",
+      "sha256": "6807389c46db44ca058f946796e2865cb7a65aa48d5e78668abacf5601b1b50d",
+      "bytes": 10961319,
+      "durationSeconds": 60,
+      "width": 512,
+      "height": 352,
+      "fps": 24,
+      "audio": "모델 공동 생성 · 48kHz 스테레오",
+      "totalProductionTime": "90분 57초 · 실측, 시험·복구 포함"
+    }
+  ]
+}

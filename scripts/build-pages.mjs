@@ -7,7 +7,7 @@ if(path.dirname(stage)!==path.resolve(root,'.local')||path.basename(stage)!=='pa
 if(fs.existsSync(stage))fs.rmSync(stage,{recursive:true,force:true});
 fs.mkdirSync(stage,{recursive:true});
 for(const name of ['components','layouts','styles'])fs.cpSync(path.join(root,'src',name),path.join(stage,name),{recursive:true});
-fs.mkdirSync(path.join(stage,'lib'));for(const file of ['data.ts','search.ts'])fs.copyFileSync(path.join(root,'src/lib',file),path.join(stage,'lib',file));
+fs.mkdirSync(path.join(stage,'lib'));for(const file of ['data.ts','search.ts','showcase.ts'])fs.copyFileSync(path.join(root,'src/lib',file),path.join(stage,'lib',file));
 const pages=path.join(stage,'pages');fs.mkdirSync(pages);
 for(const entry of fs.readdirSync(path.join(root,'src/pages'),{withFileTypes:true})){
   if(['admin','api','media'].includes(entry.name))continue;
